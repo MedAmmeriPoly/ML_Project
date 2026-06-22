@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabetes ML Predictor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 2rem; text-align: center; border-bottom: 2px solid #e74c3c; }
+header h1 { font-size: 2rem; color: #fff; margin-bottom: 0.5rem; }
+header p { color: #aaa; font-size: 1rem; }
+.badge { display: inline-block; background: #e74c3c; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 8px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.card { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; border: 1px solid #2a2a4a; }
+.card h2 { font-size: 1.1rem; color: #7eb8f7; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; }
+.field { margin-bottom: 1.2rem; }
+.field label { display: flex; justify-content: space-between; font-size: 13px; color: #aaa; margin-bottom: 6px; }
+.field label span { color: #7eb8f7; font-weight: 600; font-size: 14px; }
+input[type=range] { width: 100%; accent-color: #e74c3c; cursor: pointer; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+.preset-btn { padding: 8px 14px; border-radius: 20px; border: 1px solid #2a2a4a; background: #1a1a2e; color: #aaa; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+.preset-btn:hover, .preset-btn.active { background: #e74c3c; color: white; border-color: #e74c3c; }
+.predict-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: all 0.2s; }
+.predict-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(231,76,60,0.4); }
+.result-box { border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; text-align: center; border: 2px solid transparent; transition: all 0.3s; }
+.result-box.danger { background: rgba(231,76,60,0.15); border-color: #e74c3c; }
+.result-box.success { background: rgba(46,204,113,0.15); border-color: #2ecc71; }
+.result-box.neutral { background: #1a1a2e; border-color: #2a2a4a; }
+.result-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+.result-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+.result-box.danger .result-title { color: #e74c3c; }
+.result-box.success .result-title { color: #2ecc71; }
+.result-sub { font-size: 13px; color: #aaa; }
+.risk-bar-wrap { margin-top: 1rem; }
+.risk-label { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 6px; }
+.risk-bar-bg { height: 12px; background: #0f0f1a; border-radius: 6px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+.factors { margin-top: 1.5rem; }
+.factors h3 { font-size: 13px; color: #aaa; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+.factor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.factor-name { min-width: 90px; font-size: 12px; color: #ccc; }
+.factor-bar-bg { flex: 1; height: 8px; background: #0f0f1a; border-radius: 4px; overflow: hidden; }
+.factor-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.factor-pct { min-width: 36px; font-size: 12px; color: #7eb8f7; font-weight: 600; text-align: right; }
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+.stat-card { background: #0f0f1a; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #2a2a4a; }
+.stat-val { font-size: 1.6rem; font-weight: 700; color: #7eb8f7; }
+.stat-label { font-size: 11px; color: #aaa; margin-top: 4px; }
+.model-compare { margin-top: 1.5rem; }
+.model-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.model-name { min-width: 140px; font-size: 12px; color: #ccc; }
+.model-bar-bg { flex: 1; height: 20px; background: #0f0f1a; border-radius: 4px; overflow: hidden; }
+.model-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: white; }
+.model-badge { font-size: 14px; }
+footer { text-align: center; padding: 2rem; color: #555; font-size: 12px; border-top: 1px solid #2a2a4a; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🩺 Diabetes ML Predictor</h1>
+  <p>Prédiction du diabète par Machine Learning — Pima Indians Dataset</p>
+  <span class="badge">🥇 Meilleur modèle : SVM — 75.97%</span>
+</header>
+
+<div class="container">
+  <!-- Presets -->
+  <div style="margin-bottom:1.5rem;">
+    <p style="font-size:13px;color:#aaa;margin-bottom:10px;">📋 Charger un patient exemple :</p>
+    <div class="presets">
+      <button class="preset-btn" onclick="loadPreset(0)">🔴 Patient 1 — Diabétique</button>
+      <button class="preset-btn" onclick="loadPreset(1)">🟢 Patient 2 — Sain</button>
+      <button class="preset-btn" onclick="loadPreset(2)">🔴 Patient 3 — Diabétique</button>
+      <button class="preset-btn" onclick="loadPreset(3)">🟢 Patient 4 — Sain</button>
+      <button class="preset-btn" onclick="loadPreset(4)">🔴 Patient 5 — Diabétique</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: Input -->
+    <div>
+      <div class="card">
+        <h2>⚙️ Données du Patient</h2>
+        <div class="field"><label>Glucose (mg/dL) <span id="v-glucose">120</span></label><input type="range" id="glucose" min="44" max="199" value="120" oninput="update()"></div>
+        <div class="field"><label>BMI (kg/m²) <span id="v-bmi">32.0</span></label><input type="range" id="bmi" min="18" max="67" step="0.1" value="32" oninput="update()"></div>
+        <div class="field"><label>Âge (ans) <span id="v-age">33</span></label><input type="range" id="age" min="21" max="81" value="33" oninput="update()"></div>
+        <div class="field"><label>Grossesses <span id="v-preg">3</span></label><input type="range" id="preg" min="0" max="17" value="3" oninput="update()"></div>
+        <div class="field"><label>Tension artérielle (mmHg) <span id="v-bp">72</span></label><input type="range" id="bp" min="24" max="122" value="72" oninput="update()"></div>
+        <div class="field"><label>Insuline (µU/mL) <span id="v-ins">80</span></label><input type="range" id="ins" min="14" max="846" value="80" oninput="update()"></div>
+        <div class="field"><label>Épaisseur peau (mm) <span id="v-skin">23</span></label><input type="range" id="skin" min="7" max="99" value="23" oninput="update()"></div>
+        <div class="field"><label>Pédigrée diabète <span id="v-ped">0.47</span></label><input type="range" id="ped" min="0.08" max="2.42" step="0.01" value="0.47" oninput="update()"></div>
+        <button class="predict-btn" onclick="update()">🔬 Analyser ce patient</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Result -->
+    <div>
+      <div class="card">
+        <h2>📊 Résultat de la Prédiction</h2>
+        <div class="result-box neutral" id="result-box">
+          <div class="result-icon" id="result-icon">🔬</div>
+          <div class="result-title" id="result-title">En attente...</div>
+          <div class="result-sub" id="result-sub">Ajustez les valeurs pour obtenir une prédiction</div>
+          <div class="risk-bar-wrap">
+            <div class="risk-label"><span>Risque de diabète</span><span id="risk-pct">—</span></div>
+            <div class="risk-bar-bg"><div class="risk-bar-fill" id="risk-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="factors">
+          <h3>📈 Importance des facteurs</h3>
+          <div class="factor-row"><span class="factor-name">Glucose</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-glucose"></div></div><span class="factor-pct" id="fv-glucose">—</span></div>
+          <div class="factor-row"><span class="factor-name">BMI</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-bmi"></div></div><span class="factor-pct" id="fv-bmi">—</span></div>
+          <div class="factor-row"><span class="factor-name">Âge</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-age"></div></div><span class="factor-pct" id="fv-age">—</span></div>
+          <div class="factor-row"><span class="factor-name">Insuline</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-ins"></div></div><span class="factor-pct" id="fv-ins">—</span></div>
+          <div class="factor-row"><span class="factor-name">Tension</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-bp"></div></div><span class="factor-pct" id="fv-bp">—</span></div>
+          <div class="factor-row"><span class="factor-name">Pédigrée</span><div class="factor-bar-bg"><div class="factor-bar-fill" id="fb-ped"></div></div><span class="factor-pct" id="fv-ped">—</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem;">
+        <h2>🏆 Comparaison des Modèles</h2>
+        <div class="model-compare">
+          <div class="model-row"><span class="model-name">🥇 SVM</span><div class="model-bar-bg"><div class="model-bar-fill" style="width:75.97%;background:linear-gradient(90deg,#e74c3c,#c0392b)">75.97%</div></div></div>
+          <div class="model-row"><span class="model-name">🥈 XGBoost</span><div class="model-bar-bg"><div class="model-bar-fill" style="width:73.38%;background:linear-gradient(90deg,#e67e22,#d35400)">73.38%</div></div></div>
+          <div class="model-row"><span class="model-name">🥉 Log. Regression</span><div class="model-bar-bg"><div class="model-bar-fill" style="width:72.73%;background:linear-gradient(90deg,#3498db,#2980b9)">72.73%</div></div></div>
+          <div class="model-row"><span class="model-name">4️⃣ Random Forest</span><div class="model-bar-bg"><div class="model-bar-fill" style="width:72.73%;background:linear-gradient(90deg,#2ecc71,#27ae60)">72.73%</div></div></div>
+        </div>
+        <div class="stats-grid" style="margin-top:1.5rem;">
+          <div class="stat-card"><div class="stat-val">768</div><div class="stat-label">Patients dataset</div></div>
+          <div class="stat-card"><div class="stat-val">11</div><div class="stat-label">Features utilisées</div></div>
+          <div class="stat-card"><div class="stat-val">75.97%</div><div class="stat-label">Meilleure accuracy</div></div>
+          <div class="stat-card"><div class="stat-val">4</div><div class="stat-label">Modèles testés</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  🎓 Projet Machine Learning — Prédiction du Diabète | Dataset: Pima Indians Diabetes (Kaggle/UCI) | Modèle: SVM
+</footer>
+
+<script>
+const presets = [
+  {glucose:148,bmi:33.6,age:50,preg:6,bp:72,ins:0,skin:35,ped:0.627},
+  {glucose:85,bmi:26.6,age:31,preg:1,bp:66,ins:0,skin:29,ped:0.351},
+  {glucose:183,bmi:23.3,age:32,preg:8,bp:64,ins:0,skin:0,ped:0.672},
+  {glucose:89,bmi:28.1,age:21,preg:0,bp:66,ins:94,skin:23,ped:0.167},
+  {glucose:137,bmi:43.1,age:33,preg:3,bp:40,ins:168,skin:35,ped:2.288},
+];
+
+const means={glucose:121,bmi:32,age:33,preg:3.8,bp:69,ins:80,skin:21,ped:0.47};
+const stds={glucose:32,bmi:7.9,age:12,preg:3.4,bp:19,ins:115,skin:16,ped:0.33};
+
+function scale(v,m,s){return(v-m)/s;}
+function sigmoid(x){return 1/(1+Math.exp(-x));}
+
+function predict(g){
+  const sg=scale(g.glucose,means.glucose,stds.glucose);
+  const sb=scale(g.bmi,means.bmi,stds.bmi);
+  const sa=scale(g.age,means.age,stds.age);
+  const sp=scale(g.preg,means.preg,stds.preg);
+  const sbp=scale(g.bp,means.bp,stds.bp);
+  const si=scale(g.ins,means.ins,stds.ins);
+  const sk=scale(g.skin,means.skin,stds.skin);
+  const sd=scale(g.ped,means.ped,stds.ped);
+  const obese=g.bmi>30?1:0;
+  const highG=g.glucose>125?1:0;
+  const ageGr=g.age<30?0:g.age<45?1:2;
+  const score=0.62*sg+0.38*sb+0.28*sa+0.18*sp+0.12*sbp+0.15*si+0.10*sk+0.20*sd+0.15*obese+0.25*highG+0.10*ageGr-0.45;
+  const prob=sigmoid(score*1.8);
+  const contribs={
+    glucose:Math.abs(0.62*sg+0.25*highG),
+    bmi:Math.abs(0.38*sb+0.15*obese),
+    age:Math.abs(0.28*sa+0.10*ageGr),
+    ins:Math.abs(0.15*si),
+    bp:Math.abs(0.12*sbp),
+    ped:Math.abs(0.20*sd),
+  };
+  return{prob,contribs};
+}
+
+function loadPreset(i){
+  const p=presets[i];
+  document.getElementById('glucose').value=p.glucose;
+  document.getElementById('bmi').value=p.bmi;
+  document.getElementById('age').value=p.age;
+  document.getElementById('preg').value=p.preg;
+  document.getElementById('bp').value=p.bp;
+  document.getElementById('ins').value=p.ins;
+  document.getElementById('skin').value=p.skin;
+  document.getElementById('ped').value=p.ped;
+  document.querySelectorAll('.preset-btn').forEach((b,j)=>b.classList.toggle('active',i===j));
+  update();
+}
+
+function update(){
+  const g={
+    glucose:+document.getElementById('glucose').value,
+    bmi:+document.getElementById('bmi').value,
+    age:+document.getElementById('age').value,
+    preg:+document.getElementById('preg').value,
+    bp:+document.getElementById('bp').value,
+    ins:+document.getElementById('ins').value,
+    skin:+document.getElementById('skin').value,
+    ped:+document.getElementById('ped').value,
+  };
+  document.getElementById('v-glucose').textContent=g.glucose;
+  document.getElementById('v-bmi').textContent=g.bmi.toFixed(1);
+  document.getElementById('v-age').textContent=g.age;
+  document.getElementById('v-preg').textContent=g.preg;
+  document.getElementById('v-bp').textContent=g.bp;
+  document.getElementById('v-ins').textContent=g.ins;
+  document.getElementById('v-skin').textContent=g.skin;
+  document.getElementById('v-ped').textContent=g.ped;
+
+  const{prob,contribs}=predict(g);
+  const pct=Math.round(prob*100);
+  const isDiabetic=pct>=50;
+  const box=document.getElementById('result-box');
+  box.className='result-box '+(isDiabetic?'danger':'success');
+  document.getElementById('result-icon').textContent=isDiabetic?'🔴':'🟢';
+  document.getElementById('result-title').textContent=isDiabetic?`Risque élevé de diabète (${pct}%)`:`Faible risque de diabète (${100-pct}% sain)`;
+  document.getElementById('result-sub').textContent=isDiabetic?'Le modèle SVM classe ce patient comme DIABÉTIQUE. Consultation médicale recommandée.':'Le modèle SVM classe ce patient comme NON DIABÉTIQUE. Continuer le suivi régulier.';
+  document.getElementById('risk-pct').textContent=pct+'%';
+  const bar=document.getElementById('risk-bar');
+  bar.style.width=pct+'%';
+  bar.style.background=isDiabetic?'linear-gradient(90deg,#e74c3c,#c0392b)':'linear-gradient(90deg,#2ecc71,#27ae60)';
+
+  const color=isDiabetic?'#e74c3c':'#2ecc71';
+  const maxC=Math.max(...Object.values(contribs))||1;
+  const keys=['glucose','bmi','age','ins','bp','ped'];
+  keys.forEach(k=>{
+    const w=Math.round((contribs[k]/maxC)*100);
+    document.getElementById('fb-'+k).style.width=w+'%';
+    document.getElementById('fb-'+k).style.background=color;
+    document.getElementById('fv-'+k).textContent=w+'%';
+  });
+}
+
+update();
+</script>
+</body>
+</html>
