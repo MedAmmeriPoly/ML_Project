@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Complete-green)
 
 > **Projet Machine Learning End-to-End** — Prédiction du diabète à partir de données médicales  
-> Module : Machine Learning | Encadrant : M. Abdallah Khemais
+> Module : Machine Learning
 
 ---
 
@@ -215,8 +215,8 @@ xgboost==3.2.0
 
 ## 👤 Auteur
 
-**Walaa** — Étudiant(e) en 4ème année  
-📧 Contact : abdallah.khemais@gmail.com  
+**mohamed A mmeri** — Étudiant(e) en 4ème année  
+📧 Contact : mohamed.amari@polytechnicien.tn  
 🎓 Module : Machine Learning | 2025-2026
 
 ---
